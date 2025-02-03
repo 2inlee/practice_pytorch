@@ -56,9 +56,13 @@ model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.RMSprop(model.parameters(), lr=1e-3)
 
-# ✅ 학습 루프 수정
+# ✅ Early Stopping 설정
 num_epochs = 20
+patience = 5  # 5 Epoch 동안 개선 없으면 중단
+best_val_loss = float('inf')
+early_stop_counter = 0
 
+# ✅ 학습 루프 수정 (Epoch 20 + Early Stopping)
 for epoch in range(num_epochs):
     model.train()
     total_loss = 0
@@ -83,18 +87,38 @@ for epoch in range(num_epochs):
     accuracy = 100 * correct / total
     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%")
 
-# ✅ 모델 평가 (Test)
-model.eval()
-correct = 0
-total = 0
+    # ✅ 검증 (Test Set 평가)
+    model.eval()
+    val_loss = 0
+    correct = 0
+    total = 0
 
-with torch.no_grad():
-    for images, labels in test_loader:
-        images, labels = images.to(device), labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs, 1)
-        correct += (predicted == labels).sum().item()
-        total += labels.size(0)
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            val_loss += loss.item()
 
-test_accuracy = 100 * correct / total
-print(f"Test Accuracy: {test_accuracy:.2f}%")
+            _, predicted = torch.max(outputs, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+
+    val_loss /= len(test_loader)
+    val_accuracy = 100 * correct / total
+    print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%")
+
+    # ✅ Early Stopping 체크
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        early_stop_counter = 0  # 개선되었으므로 카운터 초기화
+    else:
+        early_stop_counter += 1
+        print(f"Early Stopping Counter: {early_stop_counter}/{patience}")
+
+    if early_stop_counter >= patience:
+        print("Early stopping triggered! Training stopped.")
+        break
+
+# ✅ 최종 테스트 정확도 출력
+print(f"Final Test Accuracy: {val_accuracy:.2f}%")
