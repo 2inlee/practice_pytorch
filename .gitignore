@@ -1,0 +1,24 @@
+# 데이터 디렉토리 제외
+data/
+
+# 가상환경 디렉토리 제외
+.venv/
+
+# Jupyter Notebook 체크포인트 제외
+.ipynb_checkpoints/
+
+# Python 캐시 파일 제외
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 환경 설정 파일 제외
+*.env
+.env/
+
+# MacOS 시스템 파일 제외
+.DS_Store
+
+# VSCode 설정 제외
+.vscode/
